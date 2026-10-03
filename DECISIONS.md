@@ -74,16 +74,34 @@ status, but the backend is the authority and validates every change.
   result.
 - Storing a full snapshot on save (rather than only SKU references) was the key
   decision that makes saved quotes stable against catalog changes.
-- The quote builder currently accepts a SKU as free text rather than a product
-  dropdown sourced from `GET /api/catalog`; unknown SKUs are caught by the
-  backend and returned as a clear validation error.
+- The quote builder selects products from a catalog-backed dropdown populated by
+  `GET /api/catalog`, so the rep picks a real SKU rather than typing one. The
+  backend still validates every request, and its specific validation messages
+  (for example an unknown SKU, a discount above the tier maximum, or an invalid
+  seat count) are surfaced directly in the UI instead of a generic error.
+
+## What I would test on the frontend (and why)
+
+In place of adding a frontend test harness in this submission, these are the
+highest-value quote-builder behaviors I would cover, because they are the
+integration points where state, the API contract, and user feedback meet:
+
+- **Catalog-backed product selection** — selecting a product from the dropdown
+  updates the correct line item's SKU. This guards the main data-entry path.
+- **Editing quantity, seat count, and discount** — numeric inputs update state
+  correctly, since these values drive every calculation.
+- **Building the correct API payload** — empty line rows are filtered out and the
+  payload matches the backend schema (`customer_name`, `seat_count`,
+  `discount_pct`, `annual_commitment`, `line_items`). This is the contract the
+  whole flow depends on, so it is the most important thing to protect.
+- **Rendering calculation results** — the preview shows tier, subtotal, discount
+  amount, total, and approval status/reasons from the API response, confirming
+  the frontend trusts the backend as the source of truth.
+- **Rendering backend validation messages** — error responses (string `detail`
+  or FastAPI's array form) are shown clearly, so reps see why a quote was
+  rejected rather than a generic failure.
 
 ## With another day
 
-- Represent money as integer cents or `Decimal` in the backend to avoid any
-  floating-point rounding edge cases.
-- Replace the free-text SKU input with a product picker populated from
-  `GET /api/catalog`, and surface the backend's specific validation messages in
-  the UI instead of a generic error.
-- Add a frontend test for the quote builder, and consider merging duplicate SKUs
-  into a single line (or explicitly warning) if that matches the desired UX.
+- Represent money as integer cents or `Decimal` in the backend to avoid any floating-point rounding edge cases.
+- Add a frontend tests described above, and consider merging duplicate SKUs into a single line (or explicitly warning) if that matches the desired UX.
