@@ -37,3 +37,21 @@ class CalculatedQuote(BaseModel):
     total: float
     approval_required: bool
     approval_reasons: List[str]
+
+class SavedQuote(CalculatedQuote):
+    id: str
+    status: str
+    created_at: str
+    updated_at: str
+
+
+class SavedQuoteSummary(BaseModel):
+    id: str
+    customer_name: str
+    seat_count: int
+    total: float
+    currency: str
+    status: str
+    approval_required: bool
+    created_at: str
+    updated_at: str
