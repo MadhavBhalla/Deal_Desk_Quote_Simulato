@@ -6,6 +6,9 @@ export default function Home() {
       <p>
         <a href="/quote">Build a quote</a>
       </p>
+      <p>
+        <a href="/quotes">View saved quotes</a>
+      </p>
     </main>
   );
 }

@@ -27,3 +27,15 @@ export type SavedQuote = CalculatedQuote & {
   created_at: string;
   updated_at: string;
 };
+
+export type SavedQuoteSummary = {
+  id: string;
+  customer_name: string;
+  seat_count: number;
+  total: number;
+  currency: string;
+  status: string;
+  approval_required: boolean;
+  created_at: string;
+  updated_at: string;
+};
