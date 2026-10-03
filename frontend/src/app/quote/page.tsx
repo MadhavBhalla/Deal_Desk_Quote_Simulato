@@ -10,6 +10,7 @@ import {
   formatStatus,
 } from "@/lib/format";
 import { explainQuote } from "@/lib/explain";
+import { clearDraft, loadDraft, saveDraft } from "@/lib/draft";
 
 const emptyLineItem: LineItem = { sku: "", quantity: 1 };
 
@@ -56,6 +57,10 @@ export default function QuoteBuilderPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
 
+  // Tracks whether draft restoration has run, so the auto-save effect does not
+  // overwrite a stored draft with default form state on first render.
+  const [draftLoaded, setDraftLoaded] = useState(false);
+
   useEffect(() => {
     async function loadCatalog() {
       try {
@@ -72,6 +77,36 @@ export default function QuoteBuilderPage() {
 
     loadCatalog();
   }, []);
+
+  // Restore an unsaved draft from the browser on first load.
+  useEffect(() => {
+  const draft = loadDraft();
+  if (draft) {
+    setCustomerName(draft.customerName);
+    setSeatCount(draft.seatCount);
+    setDiscountPct(draft.discountPct);
+    setAnnualCommitment(draft.annualCommitment);
+    setLineItems(
+      draft.lineItems.length > 0 ? draft.lineItems : [{ ...emptyLineItem }]
+    );
+  }
+  setDraftLoaded(true);
+}, []);
+
+  // Persist the draft as the form changes, once restoration has completed.
+  useEffect(() => {
+  if (!draftLoaded) {
+    return;
+  }
+
+  saveDraft({
+    customerName,
+    seatCount,
+    discountPct,
+    annualCommitment,
+    lineItems,
+  });
+}, [draftLoaded, customerName, seatCount, discountPct, annualCommitment, lineItems]);
 
   function updateLineItem(index: number, item: LineItem) {
     setLineItems((items) => items.map((it, i) => (i === index ? item : it)));
@@ -155,6 +190,7 @@ export default function QuoteBuilderPage() {
 
       const data: SavedQuote = await response.json();
       setSavedQuote(data);
+      clearDraft();
     } catch {
       setSaveError("Something went wrong while saving the quote.");
     } finally {
