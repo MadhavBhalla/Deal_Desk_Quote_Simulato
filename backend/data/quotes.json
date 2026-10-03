@@ -21,9 +21,9 @@
     "approval_required": false,
     "approval_reasons": [],
     "id": "570f8262-1565-4ae3-a5e6-b83a66858e05",
-    "status": "draft",
+    "status": "rejected",
     "created_at": "2026-10-03T07:10:26.763709+00:00",
-    "updated_at": "2026-10-03T07:10:26.763709+00:00"
+    "updated_at": "2026-10-03T10:02:14.812079+00:00"
   },
   {
     "customer_name": "Status Test",
