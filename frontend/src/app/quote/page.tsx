@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import LineItemRow, { LineItem } from "@/components/LineItemRow";
-import { CalculatedQuote,Catalog, Product, SavedQuote } from "@/types/quote";
+import { CalculatedQuote, Catalog, Product, SavedQuote } from "@/types/quote";
 import {
   formatApprovalReason,
   formatDateTime,
   formatMoney,
   formatStatus,
 } from "@/lib/format";
+import { explainQuote } from "@/lib/explain";
 
 const emptyLineItem: LineItem = { sku: "", quantity: 1 };
 
@@ -53,6 +54,7 @@ export default function QuoteBuilderPage() {
   const [saving, setSaving] = useState(false);
   const [savedQuote, setSavedQuote] = useState<SavedQuote | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [showExplanation, setShowExplanation] = useState(false);
 
   useEffect(() => {
     async function loadCatalog() {
@@ -100,7 +102,7 @@ export default function QuoteBuilderPage() {
   async function calculate() {
     setLoading(true);
     setError(null);
-
+    setShowExplanation(false);
     const payload = buildPayload();
 
     try {
@@ -345,6 +347,28 @@ export default function QuoteBuilderPage() {
                 </div>
               )}
 
+              <div style={{ marginTop: "0.75rem" }}>
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => setShowExplanation((visible) => !visible)}
+                >
+                  {showExplanation
+                    ? "Hide pricing explanation"
+                    : "Explain pricing"}
+                </button>
+              </div>
+
+              {showExplanation && (
+                <div style={{ marginTop: "0.75rem" }}>
+                  <p className="muted">Pricing explanation</p>
+                  <ul className="clean-list stack">
+                    {explainQuote(result).map((line, index) => (
+                      <li key={`${index}-${line}`}>{line}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <h3 style={{ marginTop: "1rem" }}>Line items</h3>
               <ul className="clean-list item-list">
                 {result.line_items.map((line) => (
