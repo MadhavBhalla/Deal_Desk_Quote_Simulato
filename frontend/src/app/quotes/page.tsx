@@ -37,9 +37,7 @@ export default function SavedQuotesPage() {
       {loading && <p>Loading...</p>}
       {error && <p style={{ color: "crimson" }}>{error}</p>}
 
-      {!loading && !error && quotes.length === 0 && (
-        <p>No saved quotes yet.</p>
-      )}
+      {!loading && !error && quotes.length === 0 && <p>No saved quotes yet.</p>}
 
       {!loading && !error && quotes.length > 0 && (
         <ul>
@@ -53,6 +51,9 @@ export default function SavedQuotesPage() {
               </p>
               <p>Created at: {quote.created_at}</p>
               <p>Updated at: {quote.updated_at}</p>
+              <p>
+                <a href={`/quotes/${quote.id}`}>View details</a>
+              </p>
             </li>
           ))}
         </ul>
