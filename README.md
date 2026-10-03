@@ -1,6 +1,5 @@
 # Deal Desk Quote Simulator
 
-A small full-stack take-home project.
 A small full-stack app for building, pricing, and reviewing sales quotes. A user
 enters deal details (customer, seats, discount, products), gets a live price
 calculation with tier-based discount limits and approval flags, and can save the
@@ -10,7 +9,6 @@ approved/rejected).
 - **frontend/** — Next.js + TypeScript (App Router) UI
 - **backend/** — Python FastAPI service (HTTP API)
 
-The two apps run separately and communicate over HTTP.
 The two apps run separately and communicate over HTTP. There is no database;
 catalog data is read from a JSON file and saved quotes are persisted to a local
 JSON file.
@@ -94,7 +92,6 @@ python -m venv .venv
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
-Health check: http://localhost:8000/health
 
 - API: http://localhost:8000
 - Health check: http://localhost:8000/health
@@ -107,7 +104,6 @@ cd frontend
 npm install
 npm run dev
 ```
-App: http://localhost:3000
 
 - App: http://localhost:3000
 
