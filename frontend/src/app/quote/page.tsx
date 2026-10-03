@@ -39,6 +39,15 @@ async function readErrorMessage(
   return fallback;
 }
 
+// Compact, comma-separated list of product names on a calculated quote, used in
+// the scenario comparison table.
+function formatProducts(quote: CalculatedQuote): string {
+  if (quote.line_items.length === 0) {
+    return "—";
+  }
+  return quote.line_items.map((line) => line.name).join(", ");
+}
+
 export default function QuoteBuilderPage() {
   const [customerName, setCustomerName] = useState("");
   const [seatCount, setSeatCount] = useState(1);
@@ -56,6 +65,11 @@ export default function QuoteBuilderPage() {
   const [savedQuote, setSavedQuote] = useState<SavedQuote | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
+
+  // A pinned scenario (a previously calculated result) to compare the current
+  // result against. Comparison reuses the existing calculation flow entirely.
+  const [comparisonScenario, setComparisonScenario] =
+    useState<CalculatedQuote | null>(null);
 
   // Tracks whether draft restoration has run, so the auto-save effect does not
   // overwrite a stored draft with default form state on first render.
@@ -80,33 +94,40 @@ export default function QuoteBuilderPage() {
 
   // Restore an unsaved draft from the browser on first load.
   useEffect(() => {
-  const draft = loadDraft();
-  if (draft) {
-    setCustomerName(draft.customerName);
-    setSeatCount(draft.seatCount);
-    setDiscountPct(draft.discountPct);
-    setAnnualCommitment(draft.annualCommitment);
-    setLineItems(
-      draft.lineItems.length > 0 ? draft.lineItems : [{ ...emptyLineItem }]
-    );
-  }
-  setDraftLoaded(true);
-}, []);
+    const draft = loadDraft();
+    if (draft) {
+      setCustomerName(draft.customerName);
+      setSeatCount(draft.seatCount);
+      setDiscountPct(draft.discountPct);
+      setAnnualCommitment(draft.annualCommitment);
+      setLineItems(
+        draft.lineItems.length > 0 ? draft.lineItems : [{ ...emptyLineItem }],
+      );
+    }
+    setDraftLoaded(true);
+  }, []);
 
   // Persist the draft as the form changes, once restoration has completed.
   useEffect(() => {
-  if (!draftLoaded) {
-    return;
-  }
+    if (!draftLoaded) {
+      return;
+    }
 
-  saveDraft({
+    saveDraft({
+      customerName,
+      seatCount,
+      discountPct,
+      annualCommitment,
+      lineItems,
+    });
+  }, [
+    draftLoaded,
     customerName,
     seatCount,
     discountPct,
     annualCommitment,
     lineItems,
-  });
-}, [draftLoaded, customerName, seatCount, discountPct, annualCommitment, lineItems]);
+  ]);
 
   function updateLineItem(index: number, item: LineItem) {
     setLineItems((items) => items.map((it, i) => (i === index ? item : it)));
@@ -196,6 +217,16 @@ export default function QuoteBuilderPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function pinComparisonScenario() {
+    if (!result) {
+      return;
+    }
+    setComparisonScenario(result);
+    setResult(null);
+    setShowExplanation(false);
+    setError(null);
   }
 
   return (
@@ -419,6 +450,77 @@ export default function QuoteBuilderPage() {
                   </li>
                 ))}
               </ul>
+              <div style={{ marginTop: "1rem" }}>
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={pinComparisonScenario}
+                >
+                  {comparisonScenario
+                    ? "Replace Scenario A"
+                    : "Pin current as scenario A"}
+                </button>
+                {comparisonScenario && (
+                  <button
+                    className="btn"
+                    type="button"
+                    style={{ marginLeft: "0.5rem" }}
+                    onClick={() => setComparisonScenario(null)}
+                  >
+                    Clear comparison
+                  </button>
+                )}
+                {comparisonScenario && (
+                  <p className="muted" style={{ marginTop: "0.5rem" }}>
+                    Scenario A is pinned. Adjust the deal inputs, recalculate,
+                    and the new result becomes Scenario B.
+                  </p>
+                )}
+              </div>
+
+              {comparisonScenario && result && (
+                <div style={{ marginTop: "1rem" }}>
+                  <h3>Scenario comparison</h3>
+                  <table className="compare-table">
+                    <thead>
+                      <tr>
+                        <th></th>
+                        <th>Scenario A</th>
+                        <th>Scenario B</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="muted">Discount</td>
+                        <td>{comparisonScenario.discount_pct}%</td>
+                        <td>{result.discount_pct}%</td>
+                      </tr>
+                      <tr>
+                        <td className="muted">Total</td>
+                        <td>
+                          {formatMoney(
+                            comparisonScenario.total,
+                            comparisonScenario.currency,
+                          )}
+                        </td>
+                        <td>{formatMoney(result.total, result.currency)}</td>
+                      </tr>
+                      <tr>
+                        <td className="muted">Products</td>
+                        <td>{formatProducts(comparisonScenario)}</td>
+                        <td>{formatProducts(result)}</td>
+                      </tr>
+                      <tr>
+                        <td className="muted">Approval</td>
+                        <td>
+                          {comparisonScenario.approval_required ? "Yes" : "No"}
+                        </td>
+                        <td>{result.approval_required ? "Yes" : "No"}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
         </aside>

@@ -254,3 +254,21 @@ h3 {
   font-size: 1.05rem;
   font-weight: 700;
 }
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.compare-table th,
+.compare-table td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.compare-table th {
+  font-weight: 600;
+}
