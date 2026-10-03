@@ -2,7 +2,12 @@
 
 import { use, useEffect, useState } from "react";
 import { SavedQuote } from "@/types/quote";
-
+import {
+  formatApprovalReason,
+  formatDateTime,
+  formatMoney,
+  formatStatus,
+} from "@/lib/format";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
@@ -71,76 +76,130 @@ export default function SavedQuoteDetailPage({
   }
 
   return (
-    <main style={{ padding: "2rem" }}>
+    <main className="page page-narrow">
       <p>
-        <a href="/quotes">Back to saved quotes</a>
+        <a href="/quotes">← Back to saved quotes</a>
       </p>
 
       <h1>Saved Quote</h1>
 
       {loading && <p>Loading...</p>}
-      {error && <p style={{ color: "crimson" }}>{error}</p>}
+      {error && <p className="msg-error">{error}</p>}
 
       {!loading && !error && quote && (
         <div>
-          <p>Quote id: {quote.id}</p>
-          <p>Customer name: {quote.customer_name}</p>
-          <p>Seat count: {quote.seat_count}</p>
-          <p>Tier: {quote.tier}</p>
-          <p>Currency: {quote.currency}</p>
-          <p>Discount percentage: {quote.discount_pct}%</p>
-          <p>Annual commitment: {quote.annual_commitment ? "Yes" : "No"}</p>
-          <p>Subtotal: {quote.subtotal}</p>
-          <p>Discount amount: {quote.discount_amount}</p>
-          <p>Total: {quote.total}</p>
-          <p>Approval required: {quote.approval_required ? "Yes" : "No"}</p>
-
-          {quote.approval_reasons.length > 0 && (
-            <div>
-              <p>Approval reasons:</p>
-              <ul>
-                {quote.approval_reasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
+          <div className="card">
+            <div className="card-header">
+              <strong>{quote.customer_name}</strong>
+              <span className="badge">{formatStatus(quote.status)}</span>
             </div>
-          )}
+            <ul className="clean-list stack">
+              <li className="row-between">
+                <span className="muted">Quote id</span>
+                <span>{quote.id}</span>
+              </li>
+              <li className="row-between">
+                <span className="muted">Seat count</span>
+                <span>{quote.seat_count}</span>
+              </li>
+              <li className="row-between">
+                <span className="muted">Tier</span>
+                <span>{quote.tier}</span>
+              </li>
+              <li className="row-between">
+                <span className="muted">Currency</span>
+                <span>{quote.currency}</span>
+              </li>
+              <li className="row-between">
+                <span className="muted">Discount</span>
+                <span>{quote.discount_pct}%</span>
+              </li>
+              <li className="row-between">
+                <span className="muted">Annual commitment</span>
+                <span>{quote.annual_commitment ? "Yes" : "No"}</span>
+              </li>
+              <li className="row-between">
+                <span className="muted">Subtotal</span>
+                <span>{formatMoney(quote.subtotal, quote.currency)}</span>
+              </li>
+              <li className="row-between">
+                <span className="muted">Discount amount</span>
+                <span>{formatMoney(quote.discount_amount, quote.currency)}</span>
+              </li>
+              <li className="row-between total-line">
+                <span>Total</span>
+                <span>{formatMoney(quote.total, quote.currency)}</span>
+              </li>
+              <li className="row-between">
+                <span className="muted">Approval required</span>
+                <span
+                  className={`badge ${
+                    quote.approval_required ? "badge-danger" : "badge-success"
+                  }`}
+                >
+                  {quote.approval_required ? "Yes" : "No"}
+                </span>
+              </li>
+            </ul>
 
-          <p>Status: {quote.status}</p>
-          <p>Created at: {quote.created_at}</p>
-          <p>Updated at: {quote.updated_at}</p>
+            {quote.approval_reasons.length > 0 && (
+              <div style={{ marginTop: "0.75rem" }}>
+                <p className="muted">Approval reasons</p>
+                <ul className="item-list">
+                  {quote.approval_reasons.map((reason) => (
+                    <li key={reason}>{formatApprovalReason(reason)}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-          <div style={{ marginTop: "1rem" }}>
+            <p className="muted" style={{ marginTop: "0.75rem" }}>
+              Created {formatDateTime(quote.created_at)} · Updated{" "}
+              {formatDateTime(quote.updated_at)}
+            </p>
+          </div>
+
+          <div className="card">
             <h2>Status actions</h2>
             {ALLOWED_TRANSITIONS[quote.status]?.length ? (
-              ALLOWED_TRANSITIONS[quote.status].map((nextStatus) => (
-                <button
-                  key={nextStatus}
-                  type="button"
-                  onClick={() => updateStatus(nextStatus)}
-                  disabled={updating}
-                  style={{ marginRight: "0.5rem" }}
-                >
-                  {nextStatus}
-                </button>
-              ))
+              <div className="btn-row">
+                {ALLOWED_TRANSITIONS[quote.status].map((nextStatus) => (
+                  <button
+                    key={nextStatus}
+                    className="btn btn-primary"
+                    type="button"
+                    onClick={() => updateStatus(nextStatus)}
+                    disabled={updating}
+                  >
+                    {formatStatus(nextStatus)}
+                  </button>
+                ))}
+              </div>
             ) : (
-              <p>No further actions available.</p>
+              <p className="muted">No further actions available.</p>
             )}
 
             {updating && <p>Updating status...</p>}
-            {statusMessage && <p style={{ color: "green" }}>{statusMessage}</p>}
-            {statusError && <p style={{ color: "crimson" }}>{statusError}</p>}
+            {statusMessage && <p className="msg-success">{statusMessage}</p>}
+            {statusError && <p className="msg-error">{statusError}</p>}
           </div>
-          <h2>Line items</h2>
-          <ul>
-            {quote.line_items.map((line, index) => (
-              <li key={`${line.sku}-${index}`}>
-                {line.name} ({line.sku}) — qty {line.quantity} ×{" "}
-                {line.unit_price} = {line.line_total}
-              </li>
-            ))}
-          </ul>
+
+          <div className="card">
+            <h2>Line items</h2>
+            <ul className="clean-list item-list">
+              {quote.line_items.map((line, index) => (
+                <li key={`${line.sku}-${index}`} className="row-between">
+                  <span>
+                    {line.name}{" "}
+                    <span className="muted">
+                      ({line.sku}) × {line.quantity}
+                    </span>
+                  </span>
+                  <span>{formatMoney(line.line_total, quote.currency)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
     </main>

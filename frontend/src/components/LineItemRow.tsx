@@ -21,14 +21,16 @@ export default function LineItemRow({
   canRemove,
 }: LineItemRowProps) {
   return (
-    <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
+    <div className="line-row">
       <input
+        className="input"
         type="text"
         placeholder="SKU (e.g. AGENT-CORE)"
         value={item.sku}
         onChange={(e) => onChange(index, { ...item, sku: e.target.value })}
       />
       <input
+      className="input input-qty"
         type="number"
         min={1}
         placeholder="Quantity"
@@ -38,6 +40,7 @@ export default function LineItemRow({
         }
       />
       <button
+      className="btn"
         type="button"
         onClick={() => onRemove(index)}
         disabled={!canRemove}

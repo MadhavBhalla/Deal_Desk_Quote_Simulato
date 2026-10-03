@@ -3,6 +3,12 @@
 import { useState } from "react";
 import LineItemRow, { LineItem } from "@/components/LineItemRow";
 import { CalculatedQuote, SavedQuote } from "@/types/quote";
+import {
+  formatApprovalReason,
+  formatDateTime,
+  formatMoney,
+  formatStatus,
+} from "@/lib/format";
 
 const emptyLineItem: LineItem = { sku: "", quantity: 1 };
 
@@ -105,153 +111,207 @@ export default function QuoteBuilderPage() {
   }
 
   return (
-    <main style={{ padding: "2rem", display: "flex", gap: "2rem" }}>
-      {/* Quote builder form */}
-      <section style={{ flex: 1 }}>
-        <h1>Build a Quote</h1>
+    <main className="page">
+      <h1>Build a Quote</h1>
+      <p className="muted" style={{ marginBottom: "1.5rem" }}>
+        Enter deal details to preview pricing and approval requirements.
+      </p>
 
-        <div style={{ marginBottom: "0.75rem" }}>
-          <label>
-            Customer name
-            <br />
+      <div className="grid-2">
+        {/* Quote builder form */}
+        <section className="card">
+          <h2>Deal details</h2>
+
+          <div className="field">
+            <label htmlFor="customerName">Customer name</label>
             <input
+              id="customerName"
+              className="input"
               type="text"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
             />
-          </label>
-        </div>
+          </div>
 
-        <div style={{ marginBottom: "0.75rem" }}>
-          <label>
-            Seat count
-            <br />
+          <div className="field">
+            <label htmlFor="seatCount">Seat count</label>
             <input
+              id="seatCount"
+              className="input"
               type="number"
               min={1}
               value={seatCount}
               onChange={(e) => setSeatCount(Number(e.target.value))}
             />
-          </label>
-        </div>
+          </div>
 
-        <div style={{ marginBottom: "0.75rem" }}>
-          <label>
-            Discount percentage
-            <br />
+          <div className="field">
+            <label htmlFor="discountPct">Discount percentage</label>
             <input
+              id="discountPct"
+              className="input"
               type="number"
               min={0}
               value={discountPct}
               onChange={(e) => setDiscountPct(Number(e.target.value))}
             />
-          </label>
-        </div>
+          </div>
 
-        <div style={{ marginBottom: "1rem" }}>
-          <label>
-            <input
-              type="checkbox"
-              checked={annualCommitment}
-              onChange={(e) => setAnnualCommitment(e.target.checked)}
-            />{" "}
-            Annual commitment
-          </label>
-        </div>
+          <div className="field">
+            <label className="checkbox-field">
+              <input
+                type="checkbox"
+                checked={annualCommitment}
+                onChange={(e) => setAnnualCommitment(e.target.checked)}
+              />
+              Annual commitment
+            </label>
+          </div>
 
-        <h2>Line items</h2>
-        {lineItems.map((item, index) => (
-          <LineItemRow
-            key={index}
-            index={index}
-            item={item}
-            onChange={updateLineItem}
-            onRemove={removeLineItem}
-            canRemove={lineItems.length > 1}
-          />
-        ))}
-        <button type="button" onClick={addLineItem}>
-          Add line item
-        </button>
-
-        <div style={{ marginTop: "1.5rem" }}>
-          <button type="button" onClick={calculate} disabled={loading}>
-            {loading ? "Calculating..." : "Calculate"}
-          </button>{" "}
-          <button
-            type="button"
-            onClick={saveQuote}
-            disabled={saving || !hasLineItem}
-          >
-            {saving ? "Saving..." : "Save Quote"}
+          <h3>Line items</h3>
+          {lineItems.map((item, index) => (
+            <LineItemRow
+              key={index}
+              index={index}
+              item={item}
+              onChange={updateLineItem}
+              onRemove={removeLineItem}
+              canRemove={lineItems.length > 1}
+            />
+          ))}
+          <button className="btn" type="button" onClick={addLineItem}>
+            Add line item
           </button>
-        </div>
 
-        {saveError && <p style={{ color: "crimson" }}>{saveError}</p>}
-
-        {savedQuote && (
-          <div style={{ marginTop: "1rem" }}>
-            <p style={{ color: "green" }}>Quote saved.</p>
-            <p>Quote id: {savedQuote.id}</p>
-            <p>Status: {savedQuote.status}</p>
-            <p>Total: {savedQuote.total}</p>
-            <p>Created at: {savedQuote.created_at}</p>
-            <p>Updated at: {savedQuote.updated_at}</p>
+          <div className="btn-row">
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={calculate}
+              disabled={loading}
+            >
+              {loading ? "Calculating..." : "Calculate"}
+            </button>
+            <button
+              className="btn"
+              type="button"
+              onClick={saveQuote}
+              disabled={saving || !hasLineItem}
+            >
+              {saving ? "Saving..." : "Save Quote"}
+            </button>
           </div>
-        )}
-      </section>
 
-      {/* Quote preview panel */}
-      <aside
-        style={{
-          flex: 1,
-          borderLeft: "1px solid #ddd",
-          paddingLeft: "2rem",
-        }}
-      >
-        <h2>Quote preview</h2>
-        {loading && <p>Calculating...</p>}
-        {error && <p style={{ color: "crimson" }}>{error}</p>}
+          {saveError && <p className="msg-error">{saveError}</p>}
 
-        {!loading && !error && !result && (
-          <p>Pricing preview will appear here once you calculate.</p>
-        )}
+          {savedQuote && (
+            <div className="notice" style={{ marginTop: "1rem" }}>
+              <p className="msg-success" style={{ fontWeight: 600 }}>
+                Quote saved.
+              </p>
+              <p>Quote id: {savedQuote.id}</p>
+              <p>
+                Status:{" "}
+                <span className="badge">{formatStatus(savedQuote.status)}</span>
+              </p>
+              <p>
+                Total: {formatMoney(savedQuote.total, savedQuote.currency)}
+              </p>
+              <p className="muted">
+                Created {formatDateTime(savedQuote.created_at)} · Updated{" "}
+                {formatDateTime(savedQuote.updated_at)}
+              </p>
+            </div>
+          )}
+        </section>
 
-        {!loading && result && (
-          <div>
-            <p>Customer name: {result.customer_name}</p>
-            <p>Seat count: {result.seat_count}</p>
-            <p>Tier: {result.tier}</p>
-            <p>Currency: {result.currency}</p>
-            <p>Discount percentage: {result.discount_pct}%</p>
-            <p>Subtotal: {result.subtotal}</p>
-            <p>Discount amount: {result.discount_amount}</p>
-            <p>Total: {result.total}</p>
-            <p>Approval required: {result.approval_required ? "Yes" : "No"}</p>
+        {/* Quote preview panel */}
+        <aside className="card">
+          <h2>Quote preview</h2>
 
-            {result.approval_reasons.length > 0 && (
-              <div>
-                <p>Approval reasons:</p>
-                <ul>
-                  {result.approval_reasons.map((reason) => (
-                    <li key={reason}>{reason}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+          {loading && <p>Calculating...</p>}
+          {error && <p className="msg-error">{error}</p>}
 
-            <h3>Line items</h3>
-            <ul>
-              {result.line_items.map((line) => (
-                <li key={line.sku}>
-                  {line.name} ({line.sku}) — qty {line.quantity} ×{" "}
-                  {line.unit_price} = {line.line_total}
+          {!loading && !error && !result && (
+            <p className="muted">
+              Pricing preview will appear here once you calculate.
+            </p>
+          )}
+
+          {!loading && result && (
+            <div>
+              <ul className="clean-list stack">
+                <li className="row-between">
+                  <span className="muted">Customer</span>
+                  <span>{result.customer_name}</span>
                 </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </aside>
+                <li className="row-between">
+                  <span className="muted">Seat count</span>
+                  <span>{result.seat_count}</span>
+                </li>
+                <li className="row-between">
+                  <span className="muted">Tier</span>
+                  <span>{result.tier}</span>
+                </li>
+                <li className="row-between">
+                  <span className="muted">Discount</span>
+                  <span>{result.discount_pct}%</span>
+                </li>
+                <li className="row-between">
+                  <span className="muted">Subtotal</span>
+                  <span>{formatMoney(result.subtotal, result.currency)}</span>
+                </li>
+                <li className="row-between">
+                  <span className="muted">Discount amount</span>
+                  <span>
+                    {formatMoney(result.discount_amount, result.currency)}
+                  </span>
+                </li>
+                <li className="row-between total-line">
+                  <span>Total</span>
+                  <span>{formatMoney(result.total, result.currency)}</span>
+                </li>
+                <li className="row-between">
+                  <span className="muted">Approval required</span>
+                  <span
+                    className={`badge ${
+                      result.approval_required ? "badge-danger" : "badge-success"
+                    }`}
+                  >
+                    {result.approval_required ? "Yes" : "No"}
+                  </span>
+                </li>
+              </ul>
+
+              {result.approval_reasons.length > 0 && (
+                <div style={{ marginTop: "0.75rem" }}>
+                  <p className="muted">Approval reasons</p>
+                  <ul className="item-list">
+                    {result.approval_reasons.map((reason) => (
+                      <li key={reason}>{formatApprovalReason(reason)}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <h3 style={{ marginTop: "1rem" }}>Line items</h3>
+              <ul className="clean-list item-list">
+                {result.line_items.map((line) => (
+                  <li key={line.sku} className="row-between">
+                    <span>
+                      {line.name}{" "}
+                      <span className="muted">
+                        ({line.sku}) × {line.quantity}
+                      </span>
+                    </span>
+                    <span>{formatMoney(line.line_total, result.currency)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </aside>
+      </div>
     </main>
   );
 }
