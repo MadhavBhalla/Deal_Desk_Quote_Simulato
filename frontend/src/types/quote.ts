@@ -39,3 +39,14 @@ export type SavedQuoteSummary = {
   created_at: string;
   updated_at: string;
 };
+
+export type Product = {
+  sku: string;
+  name: string;
+  unit_price: number;
+};
+
+export type Catalog = {
+  currency: string;
+  products: Product[];
+};

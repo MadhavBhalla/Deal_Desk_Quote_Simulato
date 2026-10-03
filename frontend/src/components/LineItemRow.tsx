@@ -1,5 +1,5 @@
 "use client";
-
+import { Product } from "@/types/quote";
 export type LineItem = {
   sku: string;
   quantity: number;
@@ -8,6 +8,7 @@ export type LineItem = {
 type LineItemRowProps = {
   index: number;
   item: LineItem;
+  products: Product[];
   onChange: (index: number, item: LineItem) => void;
   onRemove: (index: number) => void;
   canRemove: boolean;
@@ -16,21 +17,27 @@ type LineItemRowProps = {
 export default function LineItemRow({
   index,
   item,
+  products,
   onChange,
   onRemove,
   canRemove,
 }: LineItemRowProps) {
   return (
     <div className="line-row">
-      <input
+      <select
         className="input"
-        type="text"
-        placeholder="SKU (e.g. AGENT-CORE)"
         value={item.sku}
         onChange={(e) => onChange(index, { ...item, sku: e.target.value })}
-      />
+      >
+        <option value="">Select a product…</option>
+        {products.map((product) => (
+          <option key={product.sku} value={product.sku}>
+            {product.name} ({product.sku})
+          </option>
+        ))}
+      </select>
       <input
-      className="input input-qty"
+        className="input input-qty"
         type="number"
         min={1}
         placeholder="Quantity"
@@ -40,7 +47,7 @@ export default function LineItemRow({
         }
       />
       <button
-      className="btn"
+        className="btn"
         type="button"
         onClick={() => onRemove(index)}
         disabled={!canRemove}

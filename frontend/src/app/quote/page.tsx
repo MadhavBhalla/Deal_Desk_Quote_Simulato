@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import LineItemRow, { LineItem } from "@/components/LineItemRow";
-import { CalculatedQuote, SavedQuote } from "@/types/quote";
+import { CalculatedQuote,Catalog, Product, SavedQuote } from "@/types/quote";
 import {
   formatApprovalReason,
   formatDateTime,
@@ -15,6 +15,28 @@ const emptyLineItem: LineItem = { sku: "", quantity: 1 };
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
+// Extract a readable message from a backend error response. FastAPI returns
+// detail as either a string (our business errors) or an array of validation
+// objects (schema errors).
+async function readErrorMessage(
+  response: Response,
+  fallback: string,
+): Promise<string> {
+  try {
+    const body = await response.json();
+    const detail = body?.detail;
+    if (typeof detail === "string") {
+      return detail;
+    }
+    if (Array.isArray(detail)) {
+      return detail.map((d) => d?.msg ?? JSON.stringify(d)).join(" ");
+    }
+  } catch {
+    // ignore parse errors and use the fallback
+  }
+  return fallback;
+}
+
 export default function QuoteBuilderPage() {
   const [customerName, setCustomerName] = useState("");
   const [seatCount, setSeatCount] = useState(1);
@@ -23,7 +45,7 @@ export default function QuoteBuilderPage() {
   const [lineItems, setLineItems] = useState<LineItem[]>([
     { ...emptyLineItem },
   ]);
-
+  const [products, setProducts] = useState<Product[]>([]);
   const [result, setResult] = useState<CalculatedQuote | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +53,23 @@ export default function QuoteBuilderPage() {
   const [saving, setSaving] = useState(false);
   const [savedQuote, setSavedQuote] = useState<SavedQuote | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadCatalog() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/catalog`);
+        if (!response.ok) {
+          return;
+        }
+        const data: Catalog = await response.json();
+        setProducts(data.products ?? []);
+      } catch {
+        // Leave products empty; calculation errors will still surface clearly.
+      }
+    }
+
+    loadCatalog();
+  }, []);
 
   function updateLineItem(index: number, item: LineItem) {
     setLineItems((items) => items.map((it, i) => (i === index ? item : it)));
@@ -72,7 +111,13 @@ export default function QuoteBuilderPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Unable to calculate quote.");
+        const message = await readErrorMessage(
+          response,
+          "Unable to calculate quote.",
+        );
+        setError(message);
+        setResult(null);
+        return;
       }
 
       const data: CalculatedQuote = await response.json();
@@ -98,7 +143,12 @@ export default function QuoteBuilderPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Unable to save quote.");
+        const message = await readErrorMessage(
+          response,
+          "Unable to save quote.",
+        );
+        setSaveError(message);
+        return;
       }
 
       const data: SavedQuote = await response.json();
@@ -174,6 +224,7 @@ export default function QuoteBuilderPage() {
               key={index}
               index={index}
               item={item}
+              products={products}
               onChange={updateLineItem}
               onRemove={removeLineItem}
               canRemove={lineItems.length > 1}
@@ -214,9 +265,7 @@ export default function QuoteBuilderPage() {
                 Status:{" "}
                 <span className="badge">{formatStatus(savedQuote.status)}</span>
               </p>
-              <p>
-                Total: {formatMoney(savedQuote.total, savedQuote.currency)}
-              </p>
+              <p>Total: {formatMoney(savedQuote.total, savedQuote.currency)}</p>
               <p className="muted">
                 Created {formatDateTime(savedQuote.created_at)} · Updated{" "}
                 {formatDateTime(savedQuote.updated_at)}
@@ -275,7 +324,9 @@ export default function QuoteBuilderPage() {
                   <span className="muted">Approval required</span>
                   <span
                     className={`badge ${
-                      result.approval_required ? "badge-danger" : "badge-success"
+                      result.approval_required
+                        ? "badge-danger"
+                        : "badge-success"
                     }`}
                   >
                     {result.approval_required ? "Yes" : "No"}
