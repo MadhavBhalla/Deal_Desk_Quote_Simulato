@@ -42,6 +42,14 @@ JSON file.
 - Frontend pages: home, quote builder with live preview, saved quotes list,
   and quote detail with status actions
 
+Quote builder extras (frontend, no extra backend endpoints):
+
+- **Pricing explanation** — a plain-language breakdown of how the total,
+  discount, tier, and approval outcome were derived.
+- **Draft recovery** — unsaved builder inputs are kept in the browser and
+  restored automatically after a refresh.
+- **Scenario comparison** — pin the current result and compare discount,
+  total, products, and approval against a second scenario side by side.
 ## Project structure
 
 ```
