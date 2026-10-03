@@ -20,3 +20,10 @@ export type CalculatedQuote = {
   approval_required: boolean;
   approval_reasons: string[];
 };
+
+export type SavedQuote = CalculatedQuote & {
+  id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};

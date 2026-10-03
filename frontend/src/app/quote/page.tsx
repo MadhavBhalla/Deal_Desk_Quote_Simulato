@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import LineItemRow, { LineItem } from "@/components/LineItemRow";
-import { CalculatedQuote } from "@/types/quote";
+import { CalculatedQuote, SavedQuote } from "@/types/quote";
 
 const emptyLineItem: LineItem = { sku: "", quantity: 1 };
 
@@ -22,6 +22,10 @@ export default function QuoteBuilderPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [saving, setSaving] = useState(false);
+  const [savedQuote, setSavedQuote] = useState<SavedQuote | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   function updateLineItem(index: number, item: LineItem) {
     setLineItems((items) => items.map((it, i) => (i === index ? item : it)));
   }
@@ -34,11 +38,8 @@ export default function QuoteBuilderPage() {
     setLineItems((items) => items.filter((_, i) => i !== index));
   }
 
-  async function calculate() {
-    setLoading(true);
-    setError(null);
-
-    const payload = {
+  function buildPayload() {
+    return {
       customer_name: customerName,
       seat_count: seatCount,
       discount_pct: discountPct,
@@ -47,6 +48,15 @@ export default function QuoteBuilderPage() {
         .filter((item) => item.sku.trim() !== "")
         .map((item) => ({ sku: item.sku, quantity: item.quantity })),
     };
+  }
+
+  const hasLineItem = lineItems.some((item) => item.sku.trim() !== "");
+
+  async function calculate() {
+    setLoading(true);
+    setError(null);
+
+    const payload = buildPayload();
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/quotes/calculate`, {
@@ -66,6 +76,31 @@ export default function QuoteBuilderPage() {
       setResult(null);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function saveQuote() {
+    setSaving(true);
+    setSaveError(null);
+    setSavedQuote(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/quotes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(buildPayload()),
+      });
+
+      if (!response.ok) {
+        throw new Error("Unable to save quote.");
+      }
+
+      const data: SavedQuote = await response.json();
+      setSavedQuote(data);
+    } catch {
+      setSaveError("Something went wrong while saving the quote.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -142,8 +177,28 @@ export default function QuoteBuilderPage() {
         <div style={{ marginTop: "1.5rem" }}>
           <button type="button" onClick={calculate} disabled={loading}>
             {loading ? "Calculating..." : "Calculate"}
+          </button>{" "}
+          <button
+            type="button"
+            onClick={saveQuote}
+            disabled={saving || !hasLineItem}
+          >
+            {saving ? "Saving..." : "Save Quote"}
           </button>
         </div>
+
+        {saveError && <p style={{ color: "crimson" }}>{saveError}</p>}
+
+        {savedQuote && (
+          <div style={{ marginTop: "1rem" }}>
+            <p style={{ color: "green" }}>Quote saved.</p>
+            <p>Quote id: {savedQuote.id}</p>
+            <p>Status: {savedQuote.status}</p>
+            <p>Total: {savedQuote.total}</p>
+            <p>Created at: {savedQuote.created_at}</p>
+            <p>Updated at: {savedQuote.updated_at}</p>
+          </div>
+        )}
       </section>
 
       {/* Quote preview panel */}

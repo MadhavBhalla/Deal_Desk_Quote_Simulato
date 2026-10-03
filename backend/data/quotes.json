@@ -76,5 +76,31 @@
     "status": "approved",
     "created_at": "2026-10-03T07:55:50.264488+00:00",
     "updated_at": "2026-10-03T07:58:16.866995+00:00"
+  },
+  {
+    "customer_name": "Acme Corp",
+    "seat_count": 10,
+    "tier": "GROWTH",
+    "currency": "USD",
+    "discount_pct": 10.0,
+    "annual_commitment": true,
+    "line_items": [
+      {
+        "sku": "AGENT-CORE",
+        "name": "Agent Core",
+        "quantity": 10,
+        "unit_price": 120.0,
+        "line_total": 1200.0
+      }
+    ],
+    "subtotal": 1200.0,
+    "discount_amount": 120.0,
+    "total": 1080.0,
+    "approval_required": false,
+    "approval_reasons": [],
+    "id": "72d83267-15de-4bcd-87bf-0e3dc82af1d7",
+    "status": "draft",
+    "created_at": "2026-10-03T09:12:57.612442+00:00",
+    "updated_at": "2026-10-03T09:12:57.612442+00:00"
   }
 ]
