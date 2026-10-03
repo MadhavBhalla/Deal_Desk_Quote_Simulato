@@ -41,3 +41,13 @@ def save_quote(quote: dict) -> dict:
     quotes.append(quote)
     _write_all(quotes)
     return quote
+
+def update_quote(quote: dict) -> dict:
+    """Replace an existing saved quote by id."""
+    quotes = _read_all()
+    for index, existing in enumerate(quotes):
+        if existing["id"] == quote["id"]:
+            quotes[index] = quote
+            _write_all(quotes)
+            return quote
+    raise QuoteNotFoundError(f"Quote not found: {quote['id']}")

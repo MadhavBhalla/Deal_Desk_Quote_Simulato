@@ -1,3 +1,4 @@
+from typing import Literal
 from typing import List
 
 from pydantic import BaseModel, Field
@@ -55,3 +56,6 @@ class SavedQuoteSummary(BaseModel):
     approval_required: bool
     created_at: str
     updated_at: str
+
+class StatusUpdate(BaseModel):
+    status: Literal["draft", "submitted", "approved", "rejected"]

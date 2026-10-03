@@ -4,10 +4,11 @@ from uuid import uuid4
 from fastapi import APIRouter, HTTPException
 
 from app.schemas.quote import (
-    CalculatedQuote, 
+    CalculatedQuote,
     QuoteDraft,
     SavedQuote,
     SavedQuoteSummary,
+    StatusUpdate,
 )
 from app.services.quote_calculator import QuoteValidationError, calculate_quote
 from app.repositories.quote_repository import (
@@ -15,9 +16,18 @@ from app.repositories.quote_repository import (
     get_quote,
     list_quotes,
     save_quote,
+    update_quote,
 )
 
 router = APIRouter(prefix="/api/quotes")
+
+# Allowed status transitions: current -> set of next statuses
+ALLOWED_TRANSITIONS = {
+    "draft": {"submitted"},
+    "submitted": {"approved", "rejected"},
+    "approved": set(),
+    "rejected": set(),
+}
 
 
 @router.post("/calculate", response_model=CalculatedQuote)
@@ -75,3 +85,23 @@ def get_single_quote(quote_id: str):
         return get_quote(quote_id)
     except QuoteNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+
+@router.patch("/{quote_id}/status", response_model=SavedQuote)
+def update_status(quote_id: str, update: StatusUpdate):
+    """Update a saved quote's status using guarded transitions."""
+    try:
+        quote = get_quote(quote_id)
+    except QuoteNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+    allowed = ALLOWED_TRANSITIONS.get(quote["status"], set())
+    if update.status not in allowed:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid transition from {quote['status']} to {update.status}.",
+        )
+
+    quote["status"] = update.status
+    quote["updated_at"] = datetime.now(timezone.utc).isoformat()
+    update_quote(quote)
+    return quote
